@@ -16,7 +16,7 @@ config :logger, :console,
 
 config :phoenix, :json_library, Jason
 
-config :apms, AuthMe.UserManager.Guardian,
+config :apms, ApmsWeb.Guardian,
   issuer: "apms",
   secret_key: "7cD2Z3/8JOXm/mn5LrvD+36ttI//+JlFFuo0LStylrXHKDo3AGcwxAuOzS2935kq"
 

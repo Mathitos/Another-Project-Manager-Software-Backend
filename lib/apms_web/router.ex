@@ -5,7 +5,18 @@ defmodule ApmsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :ensure_auth do
+    plug ApmsWeb.Guardian.Pipeline
+  end
+
   scope "/api/v1", ApmsWeb do
-    pipe_through :api
+    pipe_through(:api)
+
+    post("/sign_up", UserController, :create)
+    post("/sign_in", UserController, :sign_in)
+  end
+
+  scope "/api/v1", ApmsWeb do
+    pipe_through([:api, :ensure_auth])
   end
 end

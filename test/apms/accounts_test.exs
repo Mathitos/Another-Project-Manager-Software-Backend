@@ -69,7 +69,7 @@ defmodule Apms.AccountsTest do
     end
 
     test "authenticate_user/2 fails with wrong email" do
-      user = insert(:user, email: "user@email.com", password: Argon2.hash_pwd_salt("password"))
+      insert(:user, email: "user@email.com", password: Argon2.hash_pwd_salt("password"))
 
       assert {:error, :invalid_credentials} =
                Accounts.authenticate_user("other@email.com", "password")

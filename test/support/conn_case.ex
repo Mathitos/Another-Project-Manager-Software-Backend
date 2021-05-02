@@ -23,6 +23,7 @@ defmodule ApmsWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import ApmsWeb.ConnCase
+      import Apms.Factory
 
       alias ApmsWeb.Router.Helpers, as: Routes
 
