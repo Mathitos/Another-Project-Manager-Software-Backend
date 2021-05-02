@@ -24,6 +24,7 @@ defmodule Apms.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import Apms.DataCase
+      import Apms.Factory
     end
   end
 

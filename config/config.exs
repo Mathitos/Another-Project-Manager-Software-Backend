@@ -16,4 +16,8 @@ config :logger, :console,
 
 config :phoenix, :json_library, Jason
 
+config :apms, AuthMe.UserManager.Guardian,
+  issuer: "apms",
+  secret_key: "7cD2Z3/8JOXm/mn5LrvD+36ttI//+JlFFuo0LStylrXHKDo3AGcwxAuOzS2935kq"
+
 import_config "#{Mix.env()}.exs"
