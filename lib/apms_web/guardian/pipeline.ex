@@ -11,4 +11,5 @@ defmodule ApmsWeb.Guardian.Pipeline do
   # Load the user if either of the verifications worked
   plug Guardian.Plug.LoadResource, allow_blank: true
   plug Guardian.Plug.EnsureAuthenticated
+  plug ApmsWeb.Guardian.AssignUser
 end

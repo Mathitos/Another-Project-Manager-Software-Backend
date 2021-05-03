@@ -24,8 +24,10 @@ defmodule ApmsWeb.ConnCase do
       import Phoenix.ConnTest
       import ApmsWeb.ConnCase
       import Apms.Factory
+      import Apms.GuardianTestHelper
 
       alias ApmsWeb.Router.Helpers, as: Routes
+      alias Apms.Repo
 
       # The default endpoint for testing
       @endpoint ApmsWeb.Endpoint

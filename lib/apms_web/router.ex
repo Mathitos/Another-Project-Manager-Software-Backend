@@ -18,5 +18,6 @@ defmodule ApmsWeb.Router do
 
   scope "/api/v1", ApmsWeb do
     pipe_through([:api, :ensure_auth])
+    resources("/project", ProjectController)
   end
 end
