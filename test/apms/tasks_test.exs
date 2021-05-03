@@ -74,7 +74,7 @@ defmodule Apms.TasksTest do
 
     test "list_tasks/1 dont returns tasks from other projects" do
       project = insert(:project)
-      task = insert(:task)
+      insert(:task)
       assert Tasks.list_tasks(project.id) == []
     end
 

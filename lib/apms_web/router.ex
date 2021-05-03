@@ -19,5 +19,6 @@ defmodule ApmsWeb.Router do
   scope "/api/v1", ApmsWeb do
     pipe_through([:api, :ensure_auth])
     resources("/project", ProjectController)
+    resources("/project/:project_id/task", TaskController)
   end
 end
