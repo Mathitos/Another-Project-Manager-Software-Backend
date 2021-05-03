@@ -19,7 +19,8 @@ defmodule Apms.Factory do
     %Apms.Tasks.Task{
       name: "task #{uniq_number()}",
       description: "task description",
-      project: build(:project)
+      project: build(:project),
+      order: uniq_number()
     }
   end
 

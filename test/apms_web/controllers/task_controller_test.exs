@@ -22,12 +22,22 @@ defmodule ApmsWeb.TaskControllerTest do
 
       conn = get(conn, "api/v1/project/#{project.id}/task")
 
-      assert %{"id" => task1.id, "name" => task1.name, "description" => task1.description} in json_response(
+      assert %{
+               "id" => task1.id,
+               "name" => task1.name,
+               "description" => task1.description,
+               "order" => task1.order
+             } in json_response(
                conn,
                200
              )["data"]
 
-      assert %{"id" => task2.id, "name" => task2.name, "description" => task2.description} in json_response(
+      assert %{
+               "id" => task2.id,
+               "name" => task2.name,
+               "description" => task2.description,
+               "order" => task2.order
+             } in json_response(
                conn,
                200
              )["data"]
@@ -55,12 +65,22 @@ defmodule ApmsWeb.TaskControllerTest do
 
       conn = get(conn, "api/v1/project/#{project.id}/task")
 
-      assert %{"id" => task1.id, "name" => task1.name, "description" => task1.description} in json_response(
+      assert %{
+               "id" => task1.id,
+               "name" => task1.name,
+               "description" => task1.description,
+               "order" => task1.order
+             } in json_response(
                conn,
                200
              )["data"]
 
-      refute %{"id" => task2.id, "name" => task2.name, "description" => task2.description} in json_response(
+      refute %{
+               "id" => task2.id,
+               "name" => task2.name,
+               "description" => task2.description,
+               "order" => task2.order
+             } in json_response(
                conn,
                200
              )["data"]
@@ -118,6 +138,28 @@ defmodule ApmsWeb.TaskControllerTest do
 
       assert Task |> Repo.all() == []
     end
+
+    test "created task always do to end of the project", %{conn: conn, user: user} do
+      project = insert(:project, owner: user)
+      insert(:task, project: project, order: 1)
+      insert(:task, project: project, order: 2)
+      insert(:task, project: project, order: 3)
+
+      conn =
+        post(conn, "api/v1/project/#{project.id}/task", %{
+          "name" => "task name",
+          "description" => "task description",
+          "order" => 1
+        })
+
+      assert %{"id" => id, "order" => 4} =
+               json_response(
+                 conn,
+                 201
+               )["data"]
+
+      refute Task |> Repo.get_by(id: id, project_id: project.id) |> is_nil()
+    end
   end
 
   describe "update" do
@@ -174,6 +216,33 @@ defmodule ApmsWeb.TaskControllerTest do
       updated_task = Repo.get(Task, task.id)
       assert updated_task.name == task.name
       assert updated_task.description == task.description
+    end
+
+    test "when update task order, should update related tasks orders", %{conn: conn, user: user} do
+      project = insert(:project, owner: user)
+      task1 = insert(:task, project: project, order: 1)
+      task2 = insert(:task, project: project, order: 2)
+      task3 = insert(:task, project: project, order: 3)
+
+      conn =
+        put(conn, "api/v1/project/#{project.id}/task/#{task1.id}", %{
+          "name" => "updated task name",
+          "description" => "updated task description",
+          "order" => 3
+        })
+
+      assert %{"id" => _} =
+               json_response(
+                 conn,
+                 200
+               )["data"]
+
+      updated_task = Repo.get(Task, task1.id)
+      assert updated_task.name == "updated task name"
+      assert updated_task.description == "updated task description"
+      assert updated_task.order == 3
+      assert %{order: 2} = Repo.get(Task, task3.id)
+      assert %{order: 1} = Repo.get(Task, task2.id)
     end
   end
 

@@ -107,6 +107,22 @@ defmodule Apms.TasksTest do
       assert task.project_id == project.id
     end
 
+    test "create_task/1 add an task to the end of prroject" do
+      project = insert(:project)
+      insert(:task, project: project, order: 1)
+      insert(:task, project: project, order: 99)
+
+      assert {:ok, %Task{} = task} =
+               Tasks.create_task(%{
+                 name: "some name",
+                 description: "some description",
+                 project_id: project.id,
+                 order: 5
+               })
+
+      assert task.order == 100
+    end
+
     test "create_task/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Tasks.create_task(%{name: nil})
     end
@@ -122,6 +138,65 @@ defmodule Apms.TasksTest do
 
       assert task.description == "some updated description"
       assert task.name == "some updated name"
+    end
+
+    test "update_task/2 changing the order also change relative tasks order" do
+      project = insert(:project)
+      task1 = insert(:task, project: project, order: 1)
+      task2 = insert(:task, project: project, order: 2)
+      task3 = insert(:task, project: project, order: 3)
+      task4 = insert(:task, project: project, order: 4)
+      task5 = insert(:task, project: project, order: 5)
+
+      assert {:ok, _} =
+               Tasks.update_task(task1, %{
+                 name: "some updated name",
+                 description: "some updated description",
+                 order: 3
+               })
+
+      old_task1 = Repo.get(Task, task1.id)
+      assert old_task1.description == "some updated description"
+      assert old_task1.name == "some updated name"
+      assert old_task1.order == 3
+
+      assert %{order: 1} = Repo.get(Task, task2.id)
+      assert %{order: 2} = Repo.get(Task, task3.id)
+      assert %{order: 4} = Repo.get(Task, task4.id)
+      assert %{order: 5} = Repo.get(Task, task5.id)
+
+      assert {:ok, _} =
+               Tasks.update_task(task5, %{
+                 order: 3
+               })
+
+      assert %{order: 4} = Repo.get(Task, task1.id)
+      assert %{order: 5} = Repo.get(Task, task4.id)
+      assert %{order: 3} = Repo.get(Task, task5.id)
+    end
+
+    test "can't update task order to less than 1" do
+      task = insert(:task, order: 5)
+
+      assert {:ok, _} =
+               Tasks.update_task(task, %{
+                 name: "some updated name",
+                 description: "some updated description",
+                 order: 0
+               })
+
+      updated_task = Repo.get(Task, task.id)
+      assert updated_task.description == "some updated description"
+      assert updated_task.name == "some updated name"
+      assert updated_task.order == 1
+
+      assert {:ok, _} =
+               Tasks.update_task(updated_task, %{
+                 order: -2
+               })
+
+      re_updated_task = Repo.get(Task, updated_task.id)
+      assert re_updated_task.order == 1
     end
 
     test "update_task/2 with invalid data returns error changeset" do

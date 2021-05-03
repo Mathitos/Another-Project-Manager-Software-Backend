@@ -2,7 +2,6 @@ defmodule ApmsWeb.TaskController do
   use ApmsWeb, :controller
 
   alias Apms.Tasks
-  alias Apms.Tasks.Task
 
   action_fallback ApmsWeb.FallbackController
 
@@ -26,9 +25,9 @@ defmodule ApmsWeb.TaskController do
          true <- Tasks.is_user_project?(project, conn.assigns.user.id),
          {:ok, task} <-
            Tasks.create_task(%{
-             "project_id" => project_id,
-             "name" => name,
-             "description" => description
+             project_id: project_id,
+             name: name,
+             description: description
            }) do
       conn
       |> put_status(:created)
@@ -49,16 +48,21 @@ defmodule ApmsWeb.TaskController do
     |> render(:"422")
   end
 
-  def update(conn, %{
-        "project_id" => project_id,
-        "id" => id,
-        "name" => name,
-        "description" => description
-      }) do
+  def update(
+        conn,
+        %{
+          "project_id" => project_id,
+          "id" => id
+        } = params
+      ) do
     with project <- Tasks.get_project!(project_id),
          true <- Tasks.is_user_project?(project, conn.assigns.user.id),
          task <- Tasks.get_task!(id),
-         {:ok, task} <- Tasks.update_task(task, %{name: name, description: description}) do
+         params <-
+           Enum.reduce(params, %{}, fn {key, val}, acc ->
+             Map.put(acc, String.to_existing_atom(key), val)
+           end),
+         {:ok, task} <- Tasks.update_task(task, params) do
       conn
       |> render("show.json", task: task)
     else

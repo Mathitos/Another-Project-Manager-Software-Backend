@@ -7,6 +7,7 @@ defmodule Apms.Tasks do
   alias Apms.Repo
 
   alias Apms.Tasks.{Project, Task}
+  alias Ecto.Multi
 
   @doc """
   Returns the list of projects that belong to the user.
@@ -159,14 +160,18 @@ defmodule Apms.Tasks do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_task(attrs \\ %{}) do
+  def create_task(%{project_id: project_id} = attrs) when not is_nil(project_id) do
+    attrs = Map.put(attrs, :order, get_last_order(project_id) + 1)
+
     %Task{}
     |> Task.changeset(attrs)
     |> Repo.insert()
   end
 
+  def create_task(_), do: {:error, %Ecto.Changeset{}}
+
   @doc """
-  Updates a task.
+  Updates a task. Also updated related tasks orders in case tha task order is updating.
 
   ## Examples
 
@@ -177,7 +182,71 @@ defmodule Apms.Tasks do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_task(%Task{} = task, attrs) do
+  def update_task(%Task{} = task, %{order: new_order} = attrs) do
+    max_order = get_last_order(task.project_id)
+
+    case task.order do
+      current_order when current_order == new_order ->
+        update_task_without_order(task, attrs)
+
+      current_order when new_order < 1 and current_order == 1 ->
+        update_task_without_order(task, Map.put(attrs, :order, 1))
+
+      current_order when new_order > max_order and current_order == max_order ->
+        update_task_without_order(task, Map.put(attrs, :order, max_order))
+
+      _ when new_order > max_order ->
+        update_task_with_order(task, Map.put(attrs, :order, max_order))
+
+      _ when new_order < 1 ->
+        update_task_with_order(task, Map.put(attrs, :order, 1))
+
+      _ ->
+        update_task_with_order(task, attrs)
+    end
+  end
+
+  def update_task(%Task{} = task, attrs), do: update_task_without_order(task, attrs)
+
+  defp update_task_with_order(%Task{} = task, %{order: new_order} = attrs)
+       when new_order > task.order do
+    Multi.new()
+    |> Multi.update_all(
+      :updated_tasks,
+      Task
+      |> where([t], t.order > ^task.order)
+      |> where([t], t.order <= ^new_order)
+      |> update([t], inc: [order: -1]),
+      []
+    )
+    |> Multi.update(:task, Task.changeset(task, attrs))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{task: task}} -> {:ok, task}
+      _ -> {:error, %Ecto.Changeset{}}
+    end
+  end
+
+  defp update_task_with_order(%Task{} = task, %{order: new_order} = attrs)
+       when new_order < task.order do
+    Multi.new()
+    |> Multi.update_all(
+      :updated_tasks,
+      Task
+      |> where([t], t.order < ^task.order)
+      |> where([t], t.order >= ^new_order)
+      |> update([t], inc: [order: +1]),
+      []
+    )
+    |> Multi.update(:task, Task.changeset(task, attrs))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{task: task}} -> {:ok, task}
+      _ -> {:error, %Ecto.Changeset{}}
+    end
+  end
+
+  def update_task_without_order(%Task{} = task, attrs) do
     task
     |> Task.changeset(attrs)
     |> Repo.update()
@@ -197,5 +266,17 @@ defmodule Apms.Tasks do
   """
   def delete_task(%Task{} = task) do
     Repo.delete(task)
+  end
+
+  defp get_last_order(project_id) do
+    Task
+    |> where(project_id: ^project_id)
+    |> order_by(desc: :order)
+    |> limit(1)
+    |> Repo.one()
+    |> case do
+      nil -> 0
+      task -> task.order
+    end
   end
 end
