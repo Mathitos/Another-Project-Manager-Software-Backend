@@ -127,6 +127,7 @@ defmodule Apms.Tasks do
   def list_tasks(project_id) do
     Task
     |> where(project_id: ^project_id)
+    |> order_by(asc: :order)
     |> Repo.all()
   end
 

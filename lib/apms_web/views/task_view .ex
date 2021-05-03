@@ -11,6 +11,6 @@ defmodule ApmsWeb.TaskView do
   end
 
   def render("task.json", %{task: task}) do
-    %{id: task.id, name: task.name, description: task.description}
+    %{id: task.id, name: task.name, description: task.description, oder: task.order}
   end
 end

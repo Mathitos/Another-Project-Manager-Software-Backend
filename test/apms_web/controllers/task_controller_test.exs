@@ -33,6 +33,21 @@ defmodule ApmsWeb.TaskControllerTest do
              )["data"]
     end
 
+    test "list all tasks for given project corrrectly ordered", %{conn: conn, user: user} do
+      project = insert(:project, owner: user)
+      %{id: task1_id} = insert(:task, project: project, order: 1)
+      %{id: task3_id} = insert(:task, project: project, order: 3)
+      %{id: task2_id} = insert(:task, project: project, order: 2)
+
+      conn = get(conn, "api/v1/project/#{project.id}/task")
+
+      assert [%{"id" => ^task1_id}, %{"id" => ^task2_id}, %{"id" => ^task3_id}] =
+               json_response(
+                 conn,
+                 200
+               )["data"]
+    end
+
     test "shouldn't list task from different projects", %{conn: conn, user: user} do
       project = insert(:project, owner: user)
       task1 = insert(:task, project: project)

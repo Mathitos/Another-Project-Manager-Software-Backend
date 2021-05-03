@@ -78,6 +78,15 @@ defmodule Apms.TasksTest do
       assert Tasks.list_tasks(project.id) == []
     end
 
+    test "list_tasks/1 return list ordered by task order field" do
+      project = insert(:project)
+      insert(:task, project: project, order: 1)
+      insert(:task, project: project, order: 3)
+      insert(:task, project: project, order: 2)
+
+      assert [%{order: 1}, %{order: 2}, %{order: 3}] = Tasks.list_tasks(project.id)
+    end
+
     test "get_task!/1 returns the task with given id" do
       task = insert(:task)
       assert Tasks.get_task!(task.id) |> Repo.preload(project: [:owner]) == task
