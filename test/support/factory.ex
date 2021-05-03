@@ -15,6 +15,14 @@ defmodule Apms.Factory do
     }
   end
 
+  def build(:task) do
+    %Apms.Tasks.Task{
+      name: "task #{uniq_number()}",
+      description: "task description",
+      project: build(:project)
+    }
+  end
+
   defp uniq_number(), do: System.unique_integer([:positive])
 
   def build(factory_name, attributes) do
